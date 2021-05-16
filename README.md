@@ -1,7 +1,7 @@
 ORBMule Development
 ===================
 
-This is the repository for the ORBMule, a minimal STM32F427 target board for the Obrbuculum project featuring a parallel trace connector so it can serve as a reference board for ORBTrace.  Licences for materials are in individual directories.
+This is the repository for the ORBMule, a minimal STM32F427 target board for the Obrbuculum project featuring a parallel trace connector so it can serve as a reference board for ORBTrace.  Licences for materials are in individual subdirectories.
 
 There is very little that is interesting about this board, and that's the whole idea...it's only purpose in life is to give you a known reference starting point
 when first getting started with ORBTrace. It is nothing more than the CPU, with supporting crystal, a few LEDs and a USB connector.
