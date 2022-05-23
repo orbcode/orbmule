@@ -1,4 +1,4 @@
-#
+ #
 # Copyright (c) 2021, Maverick Embedded Technology Ltd
 # All rights reserved.
 #
@@ -39,6 +39,7 @@ GRAPHIC_LIBRARY	?= UCG
 
 RELEASE_BUILD	?= 0
 DEBUG		?= 0
+TRACE_BUILD     ?= 0
 
 SRCS		+= ../console.c
 SRCS		+= ../display_gizmo_squares.c
@@ -63,6 +64,13 @@ EXTRAINCDIRS	= .. $(SOC_INC)
 
 ifeq ($(FPU_TYPE),soft)
 LDSPECS		= --specs=nano.specs
+endif
+
+#
+# Call tracing support
+#
+ifeq ($(TRACE_BUILD),1)
+SRCS            += ../callstrace.c
 endif
 
 #
@@ -131,7 +139,7 @@ endif
 endif
 COMMON_FLAGS += -ffunction-sections -fdata-sections
 
-CFLAGS += --std=gnu11
+CFLAGS += --std=gnu11 -gdwarf-2
 ifeq ($(DEBUG),0)
 CFLAGS += $(COPT)
 else
@@ -139,6 +147,12 @@ CFLAGS += -g
 LDFLAGS += -g
 DEFINES += -DDEBUG
 endif
+
+ifeq ($(TRACE_BUILD),1)
+CFLAGS += -finstrument-functions -finstrument-functions-exclude-file-list=newlib_stubs,cpu_cortexm,main,cmsis
+CFLAGS += -finstrument-functions-exclude-function-list=Reset_Handler,__set_MSP,__libc_init_array,memcpy,__enable_irq
+endif
+
 CFLAGS += $(COMMON_FLAGS)
 CFLAGS += -MD -MP -MF $(DEPDIR)/$(@F).d
 CFLAGS += -Werror -Wall -Wextra -Wpedantic
@@ -157,7 +171,7 @@ CFLAGS += -Wmultistatement-macros
 
 LDFLAGS += $(COMMON_FLAGS)
 LDFLAGS += -Wl,--gc-sections -Wl,--relax $(LDSPECS)
-LDFLAGS += -Wl,--script=$(SOC_LDSCRIPT)
+LDFLAGS += -Wl,--script=$(SOC_LDSCRIPT) -Wl,-Map=$(NAME).map -Wl,--cref
 
 INCLUDES += $(patsubst %,-I%,$(EXTRAINCDIRS))
 

@@ -123,7 +123,8 @@ SECTIONS {
 	.stack (NOLOAD): {
 		. = ALIGN(8);
 		_sstack = .;
-		. = . + 0x800;	/* 2 KB stack is more than enough */
+		/* . = . + 0x800;*/	/* 2 KB stack is more than enough */
+                . = + 0x20000;
 		. = ALIGN(8);
 		_estack = .;
 	} > sram

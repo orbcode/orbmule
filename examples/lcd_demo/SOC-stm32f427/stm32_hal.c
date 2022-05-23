@@ -67,7 +67,8 @@
  */
 #define	PLL_CFG_PLLM		(12 << RCC_PLLCFGR_PLLM_Pos)
 #define	PLL_CFG_PLLN		(336 << RCC_PLLCFGR_PLLN_Pos)
-#define	PLL_CFG_PLLP		(0 << RCC_PLLCFGR_PLLP_Pos)	/* PLLP == 2 */
+//#define	PLL_CFG_PLLP		(0 << RCC_PLLCFGR_PLLP_Pos)	/* PLLP == 2 */
+#define	PLL_CFG_PLLP		(3 << RCC_PLLCFGR_PLLP_Pos)	/* PLLP == 8 */
 #define	PLL_CFG_PLLQ		(7 << RCC_PLLCFGR_PLLQ_Pos)
 #define	PLL_CFG_168M		(RCC_PLLCFGR_PLLSRC_HSE | PLL_CFG_PLLM | \
 				 PLL_CFG_PLLN | PLL_CFG_PLLP | PLL_CFG_PLLQ)
