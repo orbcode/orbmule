@@ -1,0 +1,29 @@
+# For this file, start pyocd with a command like;
+# orbtrace -p vtref,3.3 -e vtref,on ; pyocd gdb -t stm32f429xI
+
+file ofiles/simple.elf
+target extended-remote localhost:3333
+set mem inaccessible-by-default off
+load
+
+############### Everything below is for Tracing...remove if you don't need it ########
+
+source ~/Develop/orb/orbuculum/Support/gdbtrace.init
+enableSTM32TRACE 4 1
+
+dwtSamplePC 1
+dwtSyncTap 3
+dwtPostTap 1
+dwtPostInit 1
+dwtPostReset 10
+dwtCycEna 1
+
+ITMId 1
+ITMGTSFreq 3
+ITMTSPrescale 3
+ITMTXEna 1
+ITMSYNCEna 1
+ITMEna 1
+
+ITMTER 0 0xFFFFFFFF
+ITMTPR 0xFFFFFFFF
