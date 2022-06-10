@@ -24,10 +24,10 @@ static inline uint32_t _sendITM(uint32_t ch, uint32_t d, uint8_t size)
                         (*((uint8_t *)&(DBG_PORT[ch]))) = (uint8_t) d;
                         return size;
                     case 2:
-                        (*((uint16_t *)&(DBG_PORT[ch]))) = (uint8_t) d;
+                        (*((uint16_t *)&(DBG_PORT[ch]))) = (uint16_t) d;
                         return size;
                     case 4:
-                        DBG_PORT[ch] = (uint8_t) d;
+                        DBG_PORT[ch] = d;
                         return size;
                     default:
                         break;
