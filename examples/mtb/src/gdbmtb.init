@@ -1,0 +1,55 @@
+# ====================================================================
+define mtb
+  help mtb
+end
+document mtb
+
+end
+# ====================================================================
+# ====================================================================
+# ====================================================================
+
+set $MTBBASE=0x41006000
+set $MTB_POSITION=$MTBBASE
+set $MTB_MASTER  =$MTBBASE+4
+set $MTB_FLOW    =$MTBBASE+8
+set $MTB_MEMBASE =$MTBBASE+0x0c
+
+set *MTB_POSITION=0xfffffff0
+set $mtbmax = *MTB_POSITION
+
+# ====================================================================
+define mtbDisable
+  set *MTB_MASTER &= ~(1<<31)
+end
+document mtbDisable
+mtbDisable
+Disable established mtb flow
+end
+
+# ====================================================================
+define mtbEnable
+  set $size=0x1f
+  if $argc >- 1
+    set $size = $arg0
+  end
+  mtbDisable
+  set *MTB_POSITION=0
+  set *MTB_MASTER = (1<<31)|(size&0x1f)
+end
+document mtbEnable
+mtbEnable <size>
+<size>   : Size of buffer to use in power of 2 from 0=2^4 (16 bytes) to 31
+           note that max value is implementation dependent. On this system
+	   the maximum extent if $mtbmax bytes.
+end
+# ====================================================================
+define mtbGetBuffer
+if ($argc != 1)
+   help mtbGetBuffer
+end
+document mtbGetBuffer
+mtbGetBuffer <filename>
+<filename> : File to dump mtb into
+end
+# ====================================================================
