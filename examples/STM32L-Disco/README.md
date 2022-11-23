@@ -1,4 +1,4 @@
-This is the readme for the simple demo project, adapted for the STM32L-Disco board.  It should work with most other STM32 boards of similar vintage as ST have always been pretty good at family compatability...in fairness, if you change the memory addresses in the link file, it should work with most M3 and above, the only interrupt we use is SysTick.
+This is the readme for the simple demo project, adapted for the STM32L-Disco board and prepared for the Hitex ARM Conference.  It should work with most other STM32 boards of similar vintage as ST have always been pretty good at family compatability...in fairness, if you change the memory addresses in the link file, it should work with most M3 and above, the only interrupt we use is SysTick.
 
 Before starting this, you will need to install the [orbuculum](https://github.com/orbcode/orbuculum) tools. Follow the instructions at the link to to that.
 
@@ -24,7 +24,7 @@ Info : accepting 'armv7m_trace' connection on tcp/3443
 Info : accepting 'armv7m_trace' connection on tcp/3443
 ```
 
-Build the application (note that you might need to change the path to the build tools in th Makefile!);
+Build the application (note that you might need to change the path to the build tools in the Makefile!);
 
 ```
 $ make
@@ -74,7 +74,7 @@ Sieve run ends
 Iterations in 10 secs=331
 ```
 
-You can mess with the enabled channels in the application via the `ITM_ChannelEnable` ca;;s and the build parameters (e.g. `DEBUG`) in the Makefile to see what effect they have.
+You can mess with the enabled channels in the application via the `ITM_ChannelEnable` calls and the build parameters (e.g. `DEBUG`) in the Makefile to see what effect they have.
 
 The target is also configured (via the `.gdbinit` file) to output program samples. You can report those via the `orbtop` application in another window;
 
@@ -100,6 +100,6 @@ $ orbtop -l -e ofiles/simple.elf -E -c 10
  15 (SysTick)      |      926 |     1 |          0  |  -nan |          0 |         0  |          0 |         0
 ```
 
-Note that due to the limited capacity of the channel, timestamps are turned off, so you won't see the extended information about exception performance. You can mess with the parameters in `.gdbinig` to switch that information on, and you might want to switch the board to use the HSE(Bypass) crystal too in order to get better performance on the link.
+Note that due to the limited capacity of the channel, timestamps are turned off, so you won't see the extended information about exception performance. You can mess with the parameters in `.gdbinig` to switch that information on, and you might want to switch the board to use the HSE(Bypass) crystal too in order to get better performance on the link.  The configuration for that is available in the startup file, but you've got a bit of work to do with a soldering iron to make it happen.
 
 Good luck.
