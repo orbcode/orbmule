@@ -5,8 +5,8 @@
 
 // ====================================================================================================
 
-void mtb_disable(void);
-int mtb_enable(int mtb_size);
+void mtb_enable(int on);
+int mtb_setup(int mtb_size);
 void *mtb_get(void);
 int mtb_length(void);
 

@@ -9,7 +9,8 @@
  */
 MEMORY
 {
-  RAM (rwx)  : ORIGIN = 0x20000000, LENGTH =  0x8000 /*  32K */
+  MTB (rw)   : ORIGIN = 0x20000000, LENGTH =  0x1000 /*   4K */
+  RAM (rwx)  : ORIGIN = 0x20001000, LENGTH =  0x7000 /*  28K */
   FLASH (rx) : ORIGIN = 0x00000000, LENGTH = 0x40000 /* 256K */
 }
 
@@ -185,6 +186,11 @@ SECTIONS
 		*(.stack*)
 	} > RAM
 
+	.mtb :
+	{
+		*(.mtb*)
+	} > MTB
+	
 	/* Set stack top to end of RAM, and stack limit move down by
 	 * size of stack_dummy section */
 	__StackTop = ORIGIN(RAM) + LENGTH(RAM);

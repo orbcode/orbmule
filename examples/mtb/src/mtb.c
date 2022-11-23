@@ -1,3 +1,5 @@
+#include "mtb.h"
+
 /* Simple accessors for MTB functionality without any requirement for specific primitives support (e.g. CMSIS) */
 
 #define REG_MTB_POSITION           ((volatile unsigned int *)(0x41006000))
@@ -24,17 +26,27 @@
 // ====================================================================================================
 // ====================================================================================================
 
-void mtb_disable(void)
+void mtb_enable(int on)
+
 {
-  *REG_MTB_MASTER &= ~MTB_MASTER_EN;
+  if (on)
+    {
+      *REG_MTB_MASTER |= MTB_MASTER_EN;
+    }
+  else
+    {
+      *REG_MTB_MASTER &= ~MTB_MASTER_EN;
+    }
 }
 
 // ====================================================================================================
 
-int mtb_enable(int mtb_size)
+int mtb_setup(int mtb_size)
 
 {
-  mtb_disable();
+  int *m = (int *)*REG_MTB_BASE;
+  
+  mtb_enable(0);
   if ((mtb_size < 16) || (__builtin_popcount(mtb_size) != 1))
     {
     // MTB must be at least 16 bytes and be a power of 2
@@ -42,23 +54,21 @@ int mtb_enable(int mtb_size)
     }
 
     // scrub MTB SRAM so it's easy to see what has gotten written to
-  for (int i=0; i<mtb_size/4; i++) REG_MTB_BASE[i]=0;
+  for (int i=0; i<mtb_size/4; i++) *m++=0;
   const int mask = __builtin_ctz(mtb_size) - 4;
 
   *REG_MTB_POSITION = 0;
-  *REG_MTB_MASTER = MTB_MASTER_EN | MTB_MASTER_MASK(mask);
+  *REG_MTB_MASTER = MTB_MASTER_MASK(mask);
   return 1;
 }
 
 // ====================================================================================================
-
 void *mtb_get(void)
 {
   return (void*)*REG_MTB_BASE;
 }
 
 // ====================================================================================================
-
 int mtb_length(void)
 {
   return (2<< (MTB_MASTER_MASK(*REG_MTB_MASTER)+4) );
