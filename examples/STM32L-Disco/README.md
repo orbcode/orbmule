@@ -24,7 +24,7 @@ Info : accepting 'armv7m_trace' connection on tcp/3443
 Info : accepting 'armv7m_trace' connection on tcp/3443
 ```
 
-Build the application (note that you might need to change the path to the build tools in th Makefile!);
+Build the application (note that you might need to change the path to the build tools in the Makefile!);
 
 ```
 $ make
@@ -100,6 +100,6 @@ $ orbtop -l -e ofiles/simple.elf -E -c 10
  15 (SysTick)      |      926 |     1 |          0  |  -nan |          0 |         0  |          0 |         0
 ```
 
-Note that due to the limited capacity of the channel, timestamps are turned off, so you won't see the extended information about exception performance. You can mess with the parameters in `.gdbinig` to switch that information on, and you might want to switch the board to use the HSE(Bypass) crystal too in order to get better performance on the link.
+Note that due to the limited capacity of the channel, timestamps are turned off, so you won't see the extended information about exception performance. You can mess with the parameters in `.gdbinit` to switch that information on, and you might want to switch the board to use the HSE(Bypass) crystal too in order to get better performance on the link. It's also worth noting that if you switch optimisation on then you'll lose access to line number information...anyone who has ever tried to step through optimised code will be awae that it's virtually impossible to map source to object in an optimised image.
 
 Good luck.
