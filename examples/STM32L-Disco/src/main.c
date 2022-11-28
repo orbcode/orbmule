@@ -10,6 +10,7 @@ extern uint32_t SystemCoreClock;
 #define N 10000
 #define EOL "\r\n"
 
+#define OVERVIEW_CHANNEL 3
 #define RESULTS_CHANNEL  2
 #define SIEVE_CHANNEL    1
 #define ALPHABET_CHANNEL 0
@@ -82,11 +83,12 @@ int main( void )
     ITM_ChannelEnable(SIEVE_CHANNEL);
     //ITM_ChannelEnable(ALPHABET_CHANNEL);
     ITM_ChannelEnable(RESULTS_CHANNEL);
+    ITM_ChannelEnable(OVERVIEW_CHANNEL);
     ITM_Enable();
     
     while (1)
         {
-            ITM_SendString( SIEVE_CHANNEL,"\n\nSimple Example running" EOL);
+            ITM_SendString( OVERVIEW_CHANNEL,"\n\nSimple Example running" EOL);
             iterations=0;
             ems = ms+10*TICKS_PER_SEC;
             while (ms<ems)
@@ -100,7 +102,7 @@ int main( void )
                     iterations++;
                 }
             ITM_Send32(RESULTS_CHANNEL,iterations);
-
+            ITM_SendString( OVERVIEW_CHANNEL,"Run ends\r\n" EOL);
             while (1);
         }
 
