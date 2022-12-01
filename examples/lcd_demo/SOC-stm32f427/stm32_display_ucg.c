@@ -26,6 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -33,7 +34,7 @@
 #include "soc.h"
 #include "stm32_gpio.h"
 #include "stm32_hal.h"
-#include "display.h"
+#include "display_ucg.h"
 
 /*
  * TFT Display connectivity using SPI1.
@@ -225,10 +226,10 @@ soc_display_out(ringbuff_t rb, void *arg)
 }
 
 void
-stm32_display_init(void)
+soc_display_init(void)
 {
 	struct soc_display_state *ds = &soc_display_state;
-	display_hw_interface_t hi;
+	display_ucg_hw_interface_t hi;
 
 	RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 	__DSB();
@@ -245,7 +246,10 @@ stm32_display_init(void)
 	hi.hi_flush = soc_display_flush;
 	hi.hi_stats = soc_display_stats;
 
-	ds->ds_rb = display_attach(&hi, ds);
-	if (ds->ds_rb != NULL)
-		ringbuff_consumer_init(ds->ds_rb, soc_display_out, ds);
+	ds->ds_rb = display_ucg_attach(&hi, ds);
+	assert(ds->ds_rb != NULL);
+
+	ringbuff_consumer_init(ds->ds_rb, soc_display_out, ds);
+
+	display_ucg_start();
 }

@@ -42,6 +42,7 @@ DEBUG		?= 0
 TRACE_BUILD     ?= 0
 
 SRCS		+= ../console.c
+SRCS		+= ../display.c
 SRCS		+= ../display_gizmo_squares.c
 SRCS		+= ../display_gizmo_worms.c
 SRCS		+= ../main.c
@@ -83,11 +84,22 @@ DEFINES		+= -DFIXMATH_NO_OVERFLOW=1
 EXTRAINCDIRS	+= $(FIX16_PATH)
 
 #
+# ORB LCD support
+#
+ifeq ($(GRAPHIC_LIBRARY),ORBLCD)
+SRCS		+= $(SOC_ORBLCD_SRCS)
+SRCS		+= ../display_orblcd.c
+DEFINES		+= -DGRAPHIC_LIBRARY_ORBLCD=1
+endif
+
+#
 # ucglib support
 #
 ifeq ($(GRAPHIC_LIBRARY),UCG)
+SRCS		+= $(SOC_UCG_SRCS)
 SRCS		+= ../display_ucg.c
 SRCS		+= ../ucg_dev_ic_ili9488.c ../ucg_dev_tft_320x480_ili9488.c
+DEFINES		+= -DGRAPHIC_LIBRARY_UCG=1
 UCG_PATH	:= ../3rdparty/ucglib/csrc
 UCGSRCS		= $(UCG_PATH)/ucg_bitmap.c \
 		  $(UCG_PATH)/ucg_box.c \

@@ -32,15 +32,19 @@
 #include <stdio.h>
 #include "ringbuff.h"
 
-/* SoC-specific driver interface. */
-typedef struct {
-	void (*hi_power)(void *, uint32_t);
-	void (*hi_reset)(void *, unsigned int);
-	void (*hi_cs)(void *, unsigned int);
-	void (*hi_dcrs)(void *, unsigned int);
-	void (*hi_flush)(void *);
-	uint64_t (*hi_stats)(void *);
-} display_hw_interface_t;
+/* Display driver interface */
+struct display_driver;
+typedef struct display_driver *display_driver_t;
+struct display_driver {
+	uint16_t dd_width;
+	uint16_t dd_height;
+	void (*dd_clear_screen)(void *);
+	void (*dd_set_colour)(void *, uint8_t red, uint8_t green, uint8_t blue);
+	void (*dd_draw_hline)(void *, uint16_t xstart, uint16_t ystart, uint16_t length); 
+	void (*dd_draw_vline)(void *, uint16_t xstart, uint16_t ystart, uint16_t length); 
+	void (*dd_draw_pixel)(void *, uint16_t x, uint16_t y);
+	void (*dd_render)(void *);
+};
 
 /* Gizmo interface. */
 struct display_gizmo;
@@ -86,7 +90,7 @@ struct display_sin_cos {
 };
 
 /* Exported display API. */
-extern ringbuff_t display_attach(display_hw_interface_t *, void *);
+extern void display_attach(const display_driver_t, void *);
 
 extern void display_pixel(display_port_t, int x, int y);
 extern void display_line_horizontal(display_port_t, int x, int y, int w);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Maverick Embedded Technology Ltd
+ * Copyright (c) 2022, Maverick Embedded Technology Ltd
  * All rights reserved.
  *
  * Written for Maverick Embedded Technology Ltd by Steve C. Woodford.
@@ -26,19 +26,39 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef SOC_H
-#define SOC_H
+#include <stdbool.h>
+#include <stdint.h>
+#include <stdio.h>
 
-#include "ringbuff.h"
-#include "soc_header.h"
+#include "soc.h"
+#include "display_orblcd.h"
 
-/* Initialise clocks, etc. Returns a ringbuff for console output. */
-extern ringbuff_t soc_init(void);
+static bool
+stm32_orblcd_send(void *arg, bool is_cmd, uint32_t v)
+{
+	uint32_t channel = is_cmd ? LCD_COMMAND_CHANNEL : LCD_DATA_CHANNEL;
+	bool rv = false;
 
-/* Attach and initialise display driver. */
-extern void soc_display_init(void);
+	(void)arg;
 
-/* Called from the main loop, to do SoC things. */
-extern void soc_update(void);
+	if ((CoreDebug->DEMCR & CoreDebug_DEMCR_TRCENA_Msk) != 0 &&
+	    (ITM->TCR & ITM_TCR_ITMENA_Msk) != 0 &&
+	    (ITM->TER & (1u << channel)) != 0) {
+		while (ITM->PORT[channel].u32 == 0)
+			;
+		ITM->PORT[channel].u32 = v;
+		rv = true;
+	}
 
-#endif /* SOC_H */
+	return rv;
+}
+
+void
+soc_display_init(void)
+{
+
+	CoreDebug->DEMCR |= CoreDebug_DEMCR_TRCENA_Msk;
+	ITM->TER |= (1u << LCD_DATA_CHANNEL) | (1u << LCD_COMMAND_CHANNEL);
+
+	display_orblcd_attach(stm32_orblcd_send, NULL);
+}

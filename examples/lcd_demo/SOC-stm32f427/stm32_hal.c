@@ -67,8 +67,11 @@
  */
 #define	PLL_CFG_PLLM		(12 << RCC_PLLCFGR_PLLM_Pos)
 #define	PLL_CFG_PLLN		(336 << RCC_PLLCFGR_PLLN_Pos)
-//#define	PLL_CFG_PLLP		(0 << RCC_PLLCFGR_PLLP_Pos)	/* PLLP == 2 */
+#if 1
+#define	PLL_CFG_PLLP		(0 << RCC_PLLCFGR_PLLP_Pos)	/* PLLP == 2 */
+#else
 #define	PLL_CFG_PLLP		(3 << RCC_PLLCFGR_PLLP_Pos)	/* PLLP == 8 */
+#endif
 #define	PLL_CFG_PLLQ		(7 << RCC_PLLCFGR_PLLQ_Pos)
 #define	PLL_CFG_168M		(RCC_PLLCFGR_PLLSRC_HSE | PLL_CFG_PLLM | \
 				 PLL_CFG_PLLN | PLL_CFG_PLLP | PLL_CFG_PLLQ)
@@ -275,9 +278,6 @@ soc_init(void)
 	NVIC_SetPriority(SysTick_IRQn, 1);
 	SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk |
 	    SysTick_CTRL_ENABLE_Msk;
-
-	/* Attach display */
-	stm32_display_init();
 
 	/* Initialise serial console, returning ringbuff reference. */
 	return attach_console();

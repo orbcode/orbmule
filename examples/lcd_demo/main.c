@@ -43,6 +43,8 @@ main(void)
 
 	printf("\nOrb demo checking in!\n");
 
+	soc_display_init();
+
 	for (;;) {
 		display_update();
 		soc_update();
