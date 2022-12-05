@@ -135,6 +135,8 @@ display_orblcd_render(void *arg)
 	display_orblcd_send(os, true,
 	    ORBLCD_OPEN_SCREEN(DISPLAY_ORBLCD_WIDTH, DISPLAY_ORBLCD_HEIGHT,
 	    ORBLCD_DEPTH_24));
+
+	for (int g=0; g<0x90000; g++) asm("nop;");
 }
 
 void
