@@ -33,6 +33,4 @@
 #define	CLK_APB1_RATE		(CLK_AHB_RATE / 4u)
 #define	CLK_APB2_RATE		(CLK_AHB_RATE / 2u)
 
-extern void stm32_display_init(void);
-
 #endif /* STM32_HAL_H */

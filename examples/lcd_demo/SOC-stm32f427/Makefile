@@ -37,10 +37,11 @@ CPU_TYPE	:= cortex-m4
 FPU_TYPE	:= soft
 #DEBUG		?= 1
 
-SRCS		+= stm32_display.c
 SRCS		+= stm32_entropy.c
 SRCS		+= stm32_hal.c
 SRCS		+= stm32_usart.c
 SRCS		+= ../cpu_cortexm.c
+SOC_UCG_SRCS	+= stm32_display_ucg.c
+SOC_ORBLCD_SRCS	+= stm32_display_orblcd.c
 
 include ../Makefile.inc
