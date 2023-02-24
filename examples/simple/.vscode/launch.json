@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "probe-rs-debug",
+            "request": "launch",
+            "name": "Cortex probe-rs ORBTrace Debug",
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "build_simple",
+            "speed": 20000,
+            "runtimeExecutable": "probe-rs-debugger",
+            "runtimeArgs": ["debug"],
+            "chip": "stm32f427vi",            
+            "flashingConfig": {
+                "flashingEnabled": true,
+                "resetAfterFlashing": true,
+                "haltAfterReset": true
+              },    
+            "consoleLogLevel": "Debug",    
+            "allowEraseAll": true,   
+
+            "coreConfigs": [
+              {              
+                  "coreIndex": 0,  
+                  "svdFile": "${workspaceRoot}/.vscode/STM32F429x.svd",
+                  "programBinary": "${workspaceRoot}/ofiles/simple.elf",                    
+            }
+        ],
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+{
+    "cortex-debug.armToolchainPath": "",
+    "files.associations": {
+        "*.h": "c",
+        "*.c": "c",
+    },
+    "editor.insertSpaces": true,
+    "editor.tabSize": 4,
+    "cortex-debug.variableUseNaturalFormat": false,
+    "cortex-debug.showRTOS": true,
+    "cortex-debug.registerUseNaturalFormat": false,
+}

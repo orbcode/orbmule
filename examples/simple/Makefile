@@ -20,7 +20,7 @@ GCC_DEFINE+= -std=gnu99
 
 ifdef DEBUG
 GCC_DEFINE+=-DDEBUG
-DEBUG_OPTS = -g3 -gdwarf-2 -ggdb
+DEBUG_OPTS = -g3 -gdwarf-5 -ggdb
 OPT_LEVEL = -Og
 else
 DEBUG_OPTS =
