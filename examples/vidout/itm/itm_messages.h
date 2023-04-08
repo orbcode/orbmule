@@ -8,6 +8,7 @@ uint32_t ITM_Send8 ( uint32_t c, uint8_t d );
 uint32_t ITM_Send16( uint32_t c, uint16_t d );
 uint32_t ITM_Send32( uint32_t c, uint32_t d );
 uint32_t ITM_SendString( uint32_t c, char *s );
+uint32_t ITM_write( uint32_t c, const void *d, uint32_t l );
 void ITM_Enable(void);
 void ITM_Disable(void);
 void ITM_ChannelEnable(uint32_t ch);

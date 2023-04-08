@@ -31,9 +31,18 @@
  * Example main file.
  */
 
+#include "itm_messages.h"
+#include "vidout.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-#include "vidout.h"
+
+extern void SystemClock_Config(void);
+
+#define GX 6 * 32
+#define GY 80
+
+static uint8_t gmem[DF_GSIZE(GY, GX)];
 
 // ============================================================================================
 // ============================================================================================
@@ -42,75 +51,78 @@
 // ============================================================================================
 // ============================================================================================
 // ============================================================================================
-
-#define GX 6 * 32
-#define GY 80
-
-uint8_t gmem[DF_GSIZE(GY, GX)];
-int     main(void)
+int main(void)
 
 {
-    /* Initialise a screen (This starts output) */
-    struct displayFile *d = vidInit();
+  SystemClock_Config();
+  SystemCoreClockUpdate();
 
-    /* Apprend a graphic buffer of specified size */
-    DF_appendG(d, GY, GX, gmem);
+  ITM_Enable();
+  ITM_ChannelEnable(1);
 
-    /* Locate the graphic buffer onscreen and clear it */
-    DF_setGstart(d, 32, 20);
-    DF_clearG(d, false);
+  /* Initialise a screen (This starts output) */
+  struct displayFile *d = vidInit();
 
-    /* Fill the graphic buffer with some junk by way of example */
-    DF_line(d, 0, 0, GX, GY, true);
-    DF_line(d, GX, 0, 0, GY, true);
-    DF_circle(d, GX / 2, GY / 2, 20, true);
+  /* Apprend a graphic buffer of specified size */
+  DF_appendG(d, GY, GX, gmem);
 
-    for (uint32_t t = 16; t <= GX - 16; t += 16) {
-        DF_line(d, t, 0, t, 5, true);
-        DF_line(d, t, GY, t, GY - 5, true);
+  /* Locate the graphic buffer onscreen and clear it */
+  DF_setGstart(d, 32, 20);
+  DF_clearG(d, false);
+
+  /* Fill the graphic buffer with some junk by way of example */
+  DF_line(d, 0, 0, GX, GY, true);
+  DF_line(d, GX, 0, 0, GY, true);
+  DF_circle(d, GX / 2, GY / 2, 20, true);
+
+  for (uint32_t t = 16; t <= GX - 16; t += 16) {
+    DF_line(d, t, 0, t, 5, true);
+    DF_line(d, t, GY, t, GY - 5, true);
+  }
+
+  for (uint32_t t = 8; t <= GY - 8; t += 8) {
+    DF_line(d, 0, t, 5, t, true);
+    DF_line(d, GX, t, GX - 5, t, true);
+  }
+
+  for (int32_t t = -GX; t < GX; t += 4) {
+    DF_lineTo(d, GX / 2 + t, random() % (GY - 10), true);
+  }
+
+  /* Fill the text window with some junk by way of example */
+  for (uint32_t e = 0; e < XSIZE; e++) {
+    DF_putChar(d, e, 0, '0' + e % 10);
+  }
+  for (uint32_t e = 1; e < YSIZE; e++) {
+    DF_putChar(d, 0, e, e < 10 ? ' ' : '0' + e / 10);
+    DF_putChar(d, 1, e, '0' + e % 10);
+  }
+  DF_gotoXY(d, XSIZE / 2 - 5, 4);
+
+  DF_writeString(d, "Testing");
+
+  for (uint32_t t = 0; t < 256; t++)
+    DF_putChar(d, 4 + t % (XSIZE - 5), 10 + t / (XSIZE - 5), t);
+
+  DF_putChar(d, XSIZE - 1, YSIZE - 1, 'X');
+
+  /* Now a bit of animation, for fun */
+  uint32_t z = 0;
+  int zd = 1;
+  while (1) {
+    z += zd;
+    if ((z == 300) || (z == 0))
+      zd = -zd;
+
+    for (uint32_t t = 0; t < 200000; t++) {
+      __asm__("NOP;");
     }
 
-    for (uint32_t t = 8; t <= GY - 8; t += 8) {
-        DF_line(d, 0, t, 5, t, true);
-        DF_line(d, GX, t, GX - 5, t, true);
-    }
-
-    for (int32_t t = -GX; t < GX; t += 4) {
-        DF_lineTo(d, GX / 2 + t, random() % (GY - 10), true);
-    }
-
-    /* Fill the text window with some junk by way of example */
-    for (uint32_t e = 0; e < XSIZE; e++) {
-        DF_putChar(d, e, 0, '0' + e % 10);
-    }
-    for (uint32_t e = 1; e < YSIZE; e++) {
-        DF_putChar(d, 0, e, e < 10 ? ' ' : '0' + e / 10);
-        DF_putChar(d, 1, e, '0' + e % 10);
-    }
-    DF_gotoXY(d, XSIZE / 2 - 5, 4);
-
-    DF_writeString(d, "Testing");
-
-    for (uint32_t t = 0; t < 256; t++)
-        DF_putChar(d, 4 + t % (XSIZE - 5), 10 + t / (XSIZE - 5), t);
-
-    DF_putChar(d, XSIZE - 1, YSIZE - 1, 'X');
-
-    /* Now a bit of animation, for fun */
-    uint32_t z  = 0;
-    int      zd = 1;
-    while (1) {
-        z += zd;
-        if ((z == 300) || (z == 0)) zd = -zd;
-
-        for (uint32_t t = 0; t < 40000; t++) {
-            __asm__("NOP;");
-        }
-        DF_setGstart(d, 110, z);
-        DF_gotoXY(d, 2, 4);
-        DF_setToEol(d, ' ');
-        DF_gotoXY(d, 2 + (z / 8) % (XSIZE - 10), 4);
-        DF_writeString(d, " Testing");
-    }
+    DF_setGstart(d, 110, z);
+    DF_gotoXY(d, 2, 4);
+    DF_setToEol(d, ' ');
+    DF_gotoXY(d, 2 + (z / 8) % (XSIZE - 10), 4);
+    DF_writeString(d, " Testing");
+  }
 }
 // ============================================================================================

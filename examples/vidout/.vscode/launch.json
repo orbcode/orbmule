@@ -1,0 +1,57 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    //"version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Cortex ORBTrace Debug",
+            "gdbTarget": "localhost:50000",
+            "preLaunchTask": "build_vidout",
+            "runToEntryPoint": "main",
+            "cwd": "${workspaceFolder}",
+            "executable": "ofiles/firmware.elf",
+            "request": "launch",
+            "device": "stm32f427vi",
+            "svdFile": "${workspaceRoot}/.vscode/STM32F429x.svd",
+            "type": "cortex-debug",
+            "servertype": "pyocd",
+            "serverArgs": [ 
+                            "-M", "reset",
+                            "-f", "20000000",
+                            "-O", "enableswv=false"
+                            "-C", "all",
+                            "-t", "STM32F429xI",
+                        ],
+            "overrideAttachCommands": [
+                            "set mem inaccessible-by-default off",
+                            "monitor halt"
+                        ],
+            "postLaunchCommands": [
+                        "source /usr/local/share/orbcode/gdbtrace.init",
+                        "dwtSamplePC 1",
+                        "dwtSyncTap 3",
+                        "dwtPostTap 1",
+                        "dwtPostInit 2",
+                        "dwtPostReset 15",
+                        "dwtCycEna 1",
+                        "dwtTraceException 1",
+                        "ITMId 1",
+                        "ITMGTSFreq 0",
+                        "ITMTSPrescale 2",
+                        "ITMTXEna 1",
+                        "ITMSYNCEna 0",
+                        "ITMEna 1",
+                        "ITMTSEna 1",
+                        "ITMTER 0 0xFFFFFFFF",
+                        "ITMTPR 0xFFFFFFFF",
+                        "load",
+                        "monitor reset run",
+                        //"prepareSWO 168000000 42000000 0 1",  
+                        //"enableSTM32SWO",
+                        "enableSTM32TRACE 4",
+                        "startETM 0 0",
+                    ],
+        },
+    ]
+}

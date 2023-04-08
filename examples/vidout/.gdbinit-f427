@@ -4,21 +4,22 @@
 file ofiles/firmware.elf
 target extended-remote localhost:2000
 set mem inaccessible-by-default off
+monitor connect_rst enable
 monitor swdp_scan
 attach 1
 load
 
-source /usr/local/bin/orbcode/gdbtrace.init
+source /usr/local/share/orbcode/gdbtrace.init
 
 enableSTM32SWO
-#          CPU Speed bitrate T M
-prepareSWO 72000000 36000000 0 0
+#          CPU Speed bitrate  T M
+prepareSWO 168000000 42000000 0 1
 
 dwtSamplePC 1
 dwtSyncTap 3
-dwtPostTap 1
+dwtPostTap 0
 dwtPostInit 1
-dwtPostReset 15
+dwtPostReset 10
 dwtCycEna 1
 dwtTraceException 0
 

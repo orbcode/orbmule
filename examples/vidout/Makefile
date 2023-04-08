@@ -1,8 +1,12 @@
+# Define which board we are building for
+BOARD?=MULEF427
+
 #VERBOSE=1
 #DEBUG ?= 1
 
-#Define this to export LCD information over the ITM channel 
-WITH_ORBLCD_MONITOR=1
+#Set to 1 to export LCD information over the ITM channel 
+WITH_ORBLCD_MONITOR?=1
+WITH_BUSY_INDICATOR?=1
 
 CROSS_COMPILE ?= arm-none-eabi-
 
@@ -10,37 +14,47 @@ CROSS_COMPILE ?= arm-none-eabi-
 # User configuration and firmware specific object files
 ##########################################################################
 
+
+ifeq ($(BOARD),MULEF427)
+  GCC_DEFINE=-DSTM32F427xI -DSTM32F427xx
+  CORTEX_TYPE=m4
+  LD_SCRIPT = config/stm32f427vi.ld
+else
+$(error Target is not defined.)
+endif
+
 PROJNAME=vidout
 
 # Overall system defines for compilation
 ifdef DEBUG
-GCC_DEFINE=-DDEBUG
+GCC_DEFINE+=-DDEBUG
 OPT_LEVEL = 
 VARIANT = "Debug"
 else
-GCC_DEFINE= 
-OPT_LEVEL = -O3
+GCC_DEFINE+= 
+OPT_LEVEL = -Ofast
 VARIANT = "Release"
 endif
 
-ifdef WITH_ORBLCD_MONITOR
+ifeq ($(WITH_ORBLCD_MONITOR),1)
 GCC_DEFINE+=-DMONITOR_OUTPUT
 endif
 
+ifeq ($(WITH_BUSY_INDICATOR),1)
+GCC_DEFINE+=-DBUSY_MONITOR
+endif
+
 LDLIBS = 
-GCC_DEFINE+= -std=gnu99 -DSTM32F103xB -DSTM32F10X_MD
+GCC_DEFINE+= -std=gnu99
 
 # The target, flash and ram of the microprocessor.
-TARGET = STM32F103C8
-CORTEX_TYPE=m3
-LD_SCRIPT = config/stm32f103c8.ld
 CPU_TYPE = cortex-$(CORTEX_TYPE)
 
 CFILES =
 SFILES =
 OLOC = ofiles
 INCLUDE_PATHS = $(OLOC) /home/dmarples/Develop/orb/orbuculum/Inc
-DEBUG_OPTS = -g3 -gdwarf-2 -ggdb
+DEBUG_OPTS = -gdwarf
 
 ##########################################################################
 # Generic multi-project files
@@ -49,11 +63,14 @@ DEBUG_OPTS = -g3 -gdwarf-2 -ggdb
 # CMSIS Files
 # ===========
 CMSIS_DIR=thirdparty/CMSIS
-INCLUDE_PATHS += $(CMSIS_DIR)/inc
 
+ifeq ($(BOARD),MULEF427)
+INCLUDE_PATHS += $(CMSIS_DIR)/inc/stm32f427
 CFILES += $(CMSIS_DIR)/src/core_cm3.c \
-		  $(CMSIS_DIR)/src/system_stm32f10x.c
-SFILES += $(CMSIS_DIR)/src/startup_stm32f10x_md.s
+		  $(CMSIS_DIR)/src/system_stm32f4xx.c \
+		  $(CMSIS_DIR)/src/sysclock_stm32f427xx.c
+SFILES += $(CMSIS_DIR)/src/startup_stm32f427xx.s
+endif
 
 # Video Files
 # ===========
@@ -61,8 +78,13 @@ VIDEO_DIR=vidout
 INCLUDE_PATHS += $(VIDEO_DIR)
 CFILES += $(VIDEO_DIR)/displayFile.c \
 		  $(VIDEO_DIR)/rasterLine.c \
-		  $(VIDEO_DIR)/itm_messages.c \
 		  $(VIDEO_DIR)/vidout.c
+
+# ITM Files
+# =========
+ITM_DIR=itm
+INCLUDE_PATHS += $(ITM_DIR)
+CFILES += $(ITM_DIR)/itm_messages.c
 
 ##########################################################################
 # Project-specific files
@@ -74,7 +96,7 @@ App_DIR=app
 App_Inc_DIR=app
 INCLUDE_PATHS += $(App_Inc_DIR)
 
-CFILES += $(App_DIR)/main.c
+CFILES += $(App_DIR)/main.c $(App_DIR)/io.c
 
 ##########################################################################
 # GNU GCC compiler prefix and location
@@ -103,18 +125,13 @@ cmd = @$(if $(value 2),echo "$2";)$1
 Q := @
 endif
 
-ifdef DEBUG
-HOST=--specs=rdimon.specs -lgcc -lc -lrdimon --specs=nano.specs -nostartfiles
-else
-HOST=-lc -lgcc --specs=nosys.specs --specs=nano.specs -lrdimon -nostartfiles
-endif
+HOST=--specs=nano.specs -nostartfiles
 
 ##########################################################################
 # Compiler settings, parameters and flags
 ##########################################################################
 
-# Options for specific architecture
-ARCH_FLAGS=-mthumb -mcpu=$(CPU_TYPE)
+ARCH_FLAGS=-mcpu=cortex-m4
 
 # Link for code size
 GC=-Wl,--gc-sections
@@ -122,11 +139,10 @@ GC=-Wl,--gc-sections
 # Create map file
 MAP=-Wl,-Map=$(OLOC)/$(OUTFILE).map,--cref
 
-
-CFLAGS =  $(ARCH_FLAGS) $(STARTUP_DEFS) $(OPT_LEVEL) $(DEBUG_OPTS) -DTARGET=$(TARGET) -D$(TARGET) \
+CFLAGS =  -D$(BOARD) $(ARCH_FLAGS) $(STARTUP_DEFS) $(OPT_LEVEL) $(DEBUG_OPTS) \
 		-ffunction-sections -fdata-sections -Wdouble-promotion -Wall $(GCC_DEFINE)
 ASFLAGS = -c $(DEBUG_OPTS) $(ARCH_FLAGS) -x assembler-with-cpp
-LDFLAGS = $(CFLAGS) $(ARCH_FLAGS) -Wl,--no-wchar-size-warning,--gc-sections $(MAP) $(HOST)
+LDFLAGS = $(CFLAGS) $(ARCH_FLAGS) -Wl,--no-wchar-size-warning,--gc-sections,--no-warn-rwx-segment $(MAP) $(HOST)
 
 OCFLAGS = --strip-unneeded
 
@@ -158,7 +174,7 @@ build:  $(POBJS) $(SYS_OBJS)
 	$(Q)$(SIZE) $(OLOC)/$(OUTFILE).elf
 	$(Q)$(OBJCOPY) $(OCFLAGS) -O binary $(OLOC)/$(OUTFILE).elf $(OLOC)/$(OUTFILE).bin
 	$(Q)$(OBJCOPY) $(OCFLAGS) -O ihex $(OLOC)/$(OUTFILE).elf $(OLOC)/$(OUTFILE).hex
-	@echo " Built $(VARIANT) version"
+	@echo " Built $(VARIANT) version for $(BOARD)"
 
 tags:
 	-@etags $(CFILES) 2> /dev/null
