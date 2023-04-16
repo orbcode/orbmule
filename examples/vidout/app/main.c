@@ -33,7 +33,6 @@
 
 #include "itm_messages.h"
 #include "vidout.h"
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
 
@@ -54,12 +53,17 @@ static uint8_t gmem[DF_GSIZE(GY, GX)];
 int main(void)
 
 {
+  int iteration = 0;
+
   SystemClock_Config();
   SystemCoreClockUpdate();
 
   ITM_Enable();
   ITM_ChannelEnable(1);
+  //ITM_ChannelEnable(5);
+  //ITM_ChannelEnable(6);
 
+  ITM_Printf(1,"Initialised, starting\n");
   /* Initialise a screen (This starts output) */
   struct displayFile *d = vidInit();
 
@@ -111,8 +115,13 @@ int main(void)
   int zd = 1;
   while (1) {
     z += zd;
-    if ((z == 300) || (z == 0))
+    if ((z == 300) || (z == 0)) {
+      ITM_Printf(1,"Iteration %d\n",iteration++);
       zd = -zd;
+    }
+
+  ITM_Write( 5, &z, sizeof(z)); ///////////////////////////////////////////////////
+
 
     for (uint32_t t = 0; t < 200000; t++) {
       __asm__("NOP;");
@@ -121,7 +130,9 @@ int main(void)
     DF_setGstart(d, 110, z);
     DF_gotoXY(d, 2, 4);
     DF_setToEol(d, ' ');
-    DF_gotoXY(d, 2 + (z / 8) % (XSIZE - 10), 4);
+    uint8_t t = 2 + (z / 8) % (XSIZE - 10);
+    DF_gotoXY(d, t, 4);
+    ITM_Write(6,&t,1); ///////////////////////////////////////////////////////////
     DF_writeString(d, " Testing");
   }
 }

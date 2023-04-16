@@ -1,4 +1,8 @@
+#include <stdarg.h>
+#include <stdio.h>
 #include "itm_messages.h"
+
+#define MAX_STRLEN 80
 
 /* Define registers locally in case CMSIS isn't being used */
 #define DBG_DEMCR (*(volatile uint32_t *)0xE000EDFC)
@@ -17,21 +21,23 @@ static inline uint32_t _sendITM(uint32_t ch, uint32_t d, uint8_t size) {
   ) {
     while (DBG_PORT[ch] == 0) {
     }; /* Port available? */
+
     switch (size) {
     case 1:
-      (*((uint8_t *)&(DBG_PORT[ch]))) = (uint8_t)d;
-      return size;
+      (*((volatile uint8_t *)&(DBG_PORT[ch]))) = (uint8_t)d;
+      break;
     case 2:
-      (*((uint16_t *)&(DBG_PORT[ch]))) = (uint16_t)d;
-      return size;
+      (*((volatile uint16_t *)&(DBG_PORT[ch]))) = (uint16_t)d;
+      break;
     case 4:
       DBG_PORT[ch] = d;
-      return size;
+      break;
     default:
+      size=0;
       break;
     }
   }
-  return (0);
+  return (size);
 }
 // ====================================================================================================
 uint32_t ITM_Send8(uint32_t c, uint8_t d)
@@ -66,7 +72,7 @@ uint32_t ITM_SendString(uint32_t c, char *s)
   return cc;
 }
 // ====================================================================================================
-uint32_t ITM_write(uint32_t c, const void *d, uint32_t l)
+uint32_t ITM_Write(uint32_t c, const void *d, uint32_t l)
 
 {
   const char *s = (const char *)d;
@@ -74,16 +80,14 @@ uint32_t ITM_write(uint32_t c, const void *d, uint32_t l)
   if (s && (ITM_ChannelEnabled(c))) {
     while (l > 3) {
       {
-        _sendITM(c, *(uint32_t *)s, 4);
+        l -= _sendITM(c, *(uint32_t *)s, 4);
         s += 4;
-        l -= 4;
       }
     }
 
     if (l > 1) {
-      _sendITM(c, *(uint16_t *)s, 2);
+      l -= _sendITM(c, *(uint16_t *)s, 2);
       s += 2;
-      l -= 2;
     }
 
     if (l) {
@@ -93,10 +97,27 @@ uint32_t ITM_write(uint32_t c, const void *d, uint32_t l)
   return s - (char *)d;
 }
 // ====================================================================================================
+int ITM_Printf( uint32_t c, const char *fmt, ... )
+
+// Print to output stream.
+  
+{
+    static char op[MAX_STRLEN];
+    int r;
+
+    va_list va;
+    va_start( va, fmt );
+    r = vsnprintf( op, MAX_STRLEN, fmt, va );
+    va_end( va );
+    ITM_Write( c, op, r );
+    return r;
+}
+// ====================================================================================================
 void ITM_Enable(void)
 
 {
   DBG_DEMCR |= DBG_DEMCR_TRCENA;
+  DBG_TER = 0;
 }
 // ====================================================================================================
 void ITM_Disable(void)

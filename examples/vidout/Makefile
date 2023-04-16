@@ -1,19 +1,26 @@
+#Set to 1 to export LCD information over the ITM channel 
+WITH_ORBLCD_MONITOR?=0
+
+# Set to 1 to get busy factor information on a pin
+WITH_BUSY_INDICATOR?=1
+
+# Set to 1 to optimise the vidout subsystem irrespective of optimisation for the rest of the app
+OPTIMISE_VIDOUT?=1
+
 # Define which board we are building for
 BOARD?=MULEF427
 
-#VERBOSE=1
-#DEBUG ?= 1
+# Set to 1 for a verbose build
+VERBOSE=0
 
-#Set to 1 to export LCD information over the ITM channel 
-WITH_ORBLCD_MONITOR?=1
-WITH_BUSY_INDICATOR?=1
-
-CROSS_COMPILE ?= arm-none-eabi-
+# Set to 1 for a debug build
+DEBUG?=0
 
 ##########################################################################
 # User configuration and firmware specific object files
 ##########################################################################
 
+CROSS_COMPILE ?= arm-none-eabi-
 
 ifeq ($(BOARD),MULEF427)
   GCC_DEFINE=-DSTM32F427xI -DSTM32F427xx
@@ -26,13 +33,14 @@ endif
 PROJNAME=vidout
 
 # Overall system defines for compilation
-ifdef DEBUG
+ifeq ($(DEBUG),1)
 GCC_DEFINE+=-DDEBUG
 OPT_LEVEL = 
 VARIANT = "Debug"
 else
 GCC_DEFINE+= 
-OPT_LEVEL = -Ofast
+OPT_LEVEL = -O2
+#fast
 VARIANT = "Release"
 endif
 
@@ -42,6 +50,10 @@ endif
 
 ifeq ($(WITH_BUSY_INDICATOR),1)
 GCC_DEFINE+=-DBUSY_MONITOR
+endif
+
+ifeq ($(OPTIMISE_VIDOUT),1)
+GCC_DEFINE+=-DOPTIMISE_VIDOUT
 endif
 
 LDLIBS = 
@@ -117,7 +129,7 @@ OUTFILE = firmware
 # Quietening
 ##########################################################################
 
-ifdef VERBOSE
+ifeq ($(VERBOSE),1)
 cmd = $1
 Q :=
 else
@@ -152,6 +164,8 @@ PDEPS =$(POBJS:.o=.d)
 
 INCLUDE_FLAGS = $(foreach d, $(INCLUDE_PATHS), -I$d)
 
+.SUFFIXES:
+
 all : build
 
 $(OLOC)/%.o : %.c
@@ -164,20 +178,12 @@ $(OLOC)/%.o : %.s
 	$(call cmd, \$(AS) $(ASFLAGS) -o  $@ $< ,\
 	Assembling $<)
 
-$(OLOC)/%.o : %.S
-	$(Q)mkdir -p $(basename $@)
-	$(call cmd, \$(AS) $(ASFLAGS) -o  $@ $< ,\
-	Assembling $<)
-
 build:  $(POBJS) $(SYS_OBJS) 
 	$(Q)$(LD) -g $(LDFLAGS) -T $(LD_SCRIPT) $(MAP) $(POBJS) $(LDLIBS) -o $(OLOC)/$(OUTFILE).elf
 	$(Q)$(SIZE) $(OLOC)/$(OUTFILE).elf
 	$(Q)$(OBJCOPY) $(OCFLAGS) -O binary $(OLOC)/$(OUTFILE).elf $(OLOC)/$(OUTFILE).bin
 	$(Q)$(OBJCOPY) $(OCFLAGS) -O ihex $(OLOC)/$(OUTFILE).elf $(OLOC)/$(OUTFILE).hex
 	@echo " Built $(VARIANT) version for $(BOARD)"
-
-tags:
-	-@etags $(CFILES) 2> /dev/null
 
 clean:
 	-$(call cmd, \rm -f $(POBJS) $(LD_TEMP) $(OUTFILE).elf $(OUTFILE).bin $(OUTFILE).hex $(OUTFILE).map $(EXPORT) ,\

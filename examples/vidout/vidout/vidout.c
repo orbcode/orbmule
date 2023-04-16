@@ -25,17 +25,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  *
- * VGA VIDEO Output on a STM32F427VI
- * =================================
- *
- * Pinout;
- *   PA1 = VSYNC (Pin 14 on VGA connector)
- *   PA8 = HSYNC (Pin 13 on VGA connector)
- *   PA7 = Video (Pin 1, 2 or 3 on VGA connector for R, G or B respectively).
- *
- * Note that the spec calls for PA1/PA8 to be 5V and PA7 to be 1V max so you
- * might want to put a series resistor on PA7. The input impedence of VGA is 75R
- * so something in the region of 220R should be fine.
+ * VGA VIDEO Output subsystem
+ * ==========================
  *
  * To use this subsystem just make sure you've not got anything on the high
  * priority interrupt levels (by default this is configured for the highest two,
@@ -56,56 +47,14 @@
 #include "rasterLine.h"
 #include <stdio.h>
 
+
+
 #ifdef MONITOR_OUTPUT
 #include "itm_messages.h"
 #include "orblcd_protocol.h"
 #endif
 
 #include "font-8x16basic.cinc" /* The font to use */
-
-/* Setup materials section */
-/* ======================= */
-
-/* Setup pinning and perhiperals to be used ... if these are changed then  */
-/* be careful to ensure that clocks/power are enabled to the replacements. */
-
-#define VSYNCBIT 0
-#define VSYNCPT GPIOA
-#define HSYNCBIT 8
-#define HSYNCPT GPIOA
-#define VOUTBIT 7
-#define VOUTPT GPIOA
-#define TIM TIM1
-#define TIM_IRQHandler TIM1_CC_IRQHandler
-#define SPI SPI1
-
-#define DMA DMA2
-#define DMA_CHANNEL DMA2_Stream3
-#define DMA_CHANNEL_IRQn DMA2_Stream3_IRQn
-#define DMA_CHANNEL_IRQHandler DMA2_Stream3_IRQHandler
-
-#define SETUP_VSYNC                                                            \
-  do {                                                                         \
-    VSYNCPT->MODER |= (1 << (2 * VSYNCBIT));                                   \
-    VSYNCPT->OSPEEDR |= (2 << (2 * BUSYBIT));                                  \
-  } while (0) /* Medium Speed, GPIO Output */
-
-#define VSYNC_HIGH VSYNCPT->BSRR |= (1 << VSYNCBIT)
-#define VSYNC_LOW VSYNCPT->BSRR |= (1 << (16 + VSYNCBIT))
-
-#define SETUP_HSYNC                                                            \
-  do {                                                                         \
-    HSYNCPT->MODER |= (2 << (2 * HSYNCBIT));                                   \
-    HSYNCPT->OSPEEDR |= (2 << (2 * HSYNCBIT));                                 \
-    HSYNCPT->AFR[HSYNCBIT / 8] |= (1 << (4 * (HSYNCBIT % 8)));                 \
-  } while (0) /* Medium Speed, Alternate 1 PushPull */
-
-#define SETUP_VOUT                                                             \
-  do {                                                                         \
-    VOUTPT->MODER |= (2 << (2 * VOUTBIT));                                     \
-    VOUTPT->OSPEEDR |= (2 << (2 * VOUTBIT));                                   \
-    VOUTPT->AFR[VOUTBIT / 8] |= (5 << (4 * (VOUTBIT % 8)));                    \
-  } while (0) /* Medium Speed, Alternate 5 PushPull */
 
 /* Screen definition section */
 /* ========================= */
@@ -120,6 +69,9 @@
 
 /* Various elements of the display protocol ... all timing stems from these...
  */
+
+#define TIMER_CLK 168000000
+
 #define FRAME_START 0     /* Start of frame - VSYNC pulse */
 #define FRAME_BACKPORCH 2 /* End of VSYNC, start of back porch + blanking */
 #define FRAME_BACKPORCH_END 22 /* End of Backportch region */
@@ -130,7 +82,7 @@
 #define FRAME_END 624                /* End of frame ... start next one */
 
 /* Clock ticks for each element of a frame (in terms of 168MHz clock pulses) */
-#define LINEPERIOD (4799)         /* Length of a line */
+#define LINEPERIOD (TIMER_CLK/35156)         /* Length of a line (35)*/
 #define HORIZSYNCPULSEWIDTH (336) /* Horizontal pulse width */
 #define SYNCPLUSPORCH                                                          \
   (850) /* Sync + porch period, adjust if needed to centralise the image */
@@ -148,7 +100,7 @@ static volatile struct videoMachine {
   const struct rasterFont *f; /* the font in use */
   struct displayFile *d;      /* The display file being output */
   uint8_t lineBuff[2][ROUNDUP4(XSIZE +
-                               2)]; /* Line buffer containing the constructed
+                               10)]; /* Line buffer containing the constructed
                                        raster for output (roundup to word) */
   uint32_t scanLine;    /* The current line being scanned on the screen */
   uint32_t stretchLine; /* Counter for line stretching */
@@ -160,10 +112,14 @@ static volatile struct videoMachine {
  * maximum chance of working well by optimising as much as possible.
  */
 
-/* ============================================================================================
- */
+#ifdef OPTIMISE_VIDOUT
+#pragma GCC push_options
+#pragma GCC optimize("Ofast")
+#endif
 
-void TIM_IRQHandler(void) {
+/* ========================================================================================= */
+
+LOCATION_OPTIMISE void TIM_IRQHandler(void) {
   /* Called at the end of each scanline to schedule the next element of the
    * protocol Assumes that the next scanline will have been prepared for output
    * already,
@@ -199,7 +155,7 @@ void TIM_IRQHandler(void) {
     /* Send out a zeroed line... this is in the first lineBuff at the moment */
     DMA_CHANNEL->M0AR = (uint32_t)_v.lineBuff[1];
     DMA_CHANNEL->NDTR = XSIZE;
-    DMA_CHANNEL->CR |= DMA_SxCR_EN; /* Enable, No TCIE */
+    DMA_CHANNEL->CR |= DMA_SxCR_EN; /* Enable, No TCIE since no line to create */
     break;
 
     /* ------------------------------------------------------------------------
@@ -207,8 +163,8 @@ void TIM_IRQHandler(void) {
   case FRAME_OUTPUT_START ... FRAME_OUTPUT_END:
     /* Set the previusly prepared scanLine ready to be output */
     DMA_CHANNEL->M0AR = (uint32_t)_v.lineBuff[_v.readLine];
-    /* Send two extra chars for end of line blanking */
-    DMA_CHANNEL->NDTR = XSIZE + 2;
+    /* Send extra char for end of line blanking */
+    DMA_CHANNEL->NDTR = XSIZE + 1;
 
     /* See if it's time for the next line to be generated */
     if (_v.stretchLine++ == YSTRETCH) {
@@ -244,10 +200,9 @@ void TIM_IRQHandler(void) {
 
   AM_IDLE;
 }
-/* ============================================================================================
- */
+/* ========================================================================================= */
 
-void DMA_CHANNEL_IRQHandler(void)
+LOCATION_OPTIMISE void DMA_CHANNEL_IRQHandler(void)
 
 {
   /* This routine is called immediately there is room to calculate the next line
@@ -284,39 +239,28 @@ void DMA_CHANNEL_IRQHandler(void)
   AM_IDLE;
 }
 
-/* ============================================================================================
- */
-/* ============================================================================================
- */
-/* ============================================================================================
- */
+/* ========================================================================================= */
+/* ========================================================================================= */
+/* ========================================================================================= */
 /* Public routines */
-/* ============================================================================================
- */
-/* ============================================================================================
- */
-/* ============================================================================================
- */
+/* ========================================================================================= */
+/* ========================================================================================= */
+/* ========================================================================================= */
 
 uint32_t vidxSizeG(void) { return YSIZE * FONTHEIGHT; }
 
-/* ============================================================================================
- */
+/* ========================================================================================= */
 
 uint32_t vidySizeG(void) { return XSIZE * FONTWIDTH; }
 
-/* ============================================================================================
- */
+/* ========================================================================================= */
 
 struct displayFile *vidInit(void)
 
 {
   /* Switch on power/clocks to required perhiperals */
-  // RCC->AHBENR |= RCC_AHBPeriph_DMA1;
   RCC->AHB1ENR |=
       RCC_AHB1ENR_DMA2EN | RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOEEN;
-  // RCC->APB2ENR |= RCC_APB2Periph_SPI1 | RCC_APB2Periph_TIM1 |
-  // RCC_APB2Periph_GPIOA | RCC_APB2Periph_GPIOB;
   RCC->APB2ENR |=
       RCC_APB2ENR_SPI1EN | RCC_APB2ENR_TIM1EN | RCC_APB2ENR_SYSCFGEN;
 
@@ -364,8 +308,16 @@ struct displayFile *vidInit(void)
 
   TIM->CR1 = TIM_CR1_CEN; /* timer1 (Line timer) run */
 
+#ifdef MONITOR_OUTPUT
+ITM_ChannelEnable(LCD_COMMAND_CHANNEL);
+ITM_ChannelEnable(LCD_DATA_CHANNEL);
+#endif
+
   return _v.d;
 }
 
-/* ============================================================================================
- */
+/* ========================================================================================= */
+
+#ifdef OPTIMISE_VIDOUT
+#pragma GCC pop_options
+#endif

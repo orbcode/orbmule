@@ -32,8 +32,14 @@
  * chance of working well by optimising as much as possible.
  */
 
+#include "vidout.h"
 #include "rasterLine.h"
 #include "displayFile.h"
+
+#ifdef OPTIMISE_VIDOUT
+#pragma GCC push_options
+#pragma GCC optimize("Ofast")
+#endif
 
 #ifdef MONITOR_OUTPUT
 #include "itm_messages.h"
@@ -42,12 +48,11 @@
 
 #define OPTIMISED_RASTERLINE_BITS (4)
 
-/* ============================================================================================
- */
+/* ========================================================================================= */
 
-//__attribute__((__section__(".ramprog")))
-void rasterLine(struct displayFile *d, const struct rasterFont *f, uint32_t *w,
-                uint32_t rl)
+
+LOCATION_OPTIMISE void rasterLine(struct displayFile *d, const struct rasterFont *f,
+    uint32_t *w, uint32_t rl)
 
 {
   /* Bit manipulation optimisation for simple division case that can be done
@@ -69,7 +74,7 @@ void rasterLine(struct displayFile *d, const struct rasterFont *f, uint32_t *w,
 
   /* This could overrun, but we make it a constraint in the definition that the
    * buffer has to be word aligned */
-  while (chrs > 0) {
+  while (true) {
     *w = ((f->d[((displayLine[3] - f->firstChr) << OPTIMISED_RASTERLINE_BITS) +
                 index])
           << 24) |
@@ -92,11 +97,24 @@ void rasterLine(struct displayFile *d, const struct rasterFont *f, uint32_t *w,
     ITM_Send32(LCD_DATA_CHANNEL, *w);
 #endif
 
-    w++;
-    displayLine += 4;
-    chrs -= 4;
+    if (chrs<5)
+    {
+      /* Erase any chars that we wrote extra at the end of line */
+      *w&=~(0xffffffff<<(chrs<<3));
+      break;
+    }
+    else
+    {
+      w++;
+      displayLine += 4;
+      chrs -= 4;
+    }
   }
+
 }
 
-/* ============================================================================================
- */
+/* ========================================================================================== */
+
+#ifdef OPTIMISE_VIDOUT
+#pragma GCC pop_options
+#endif

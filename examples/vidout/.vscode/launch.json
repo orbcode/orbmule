@@ -29,11 +29,15 @@
                         ],
             "postLaunchCommands": [
                         "source /usr/local/share/orbcode/gdbtrace.init",
+                        // Enable these two commands for SWO ===============
+                        "prepareSWO 168000000 30000000 0 1",
+                        "enableSTM32SWO",
+                        // =================================================
                         "dwtSamplePC 1",
                         "dwtSyncTap 3",
                         "dwtPostTap 1",
                         "dwtPostInit 2",
-                        "dwtPostReset 15",
+                        "dwtPostReset 10",
                         "dwtCycEna 1",
                         "dwtTraceException 1",
                         "ITMId 1",
@@ -47,10 +51,10 @@
                         "ITMTPR 0xFFFFFFFF",
                         "load",
                         "monitor reset run",
-                        //"prepareSWO 168000000 42000000 0 1",  
-                        //"enableSTM32SWO",
-                        "enableSTM32TRACE 4",
-                        "startETM 0 0",
+                        // Enable these two commands for parallel trace ====
+                        //"enableSTM32TRACE 4",
+                        //"startETM 0 0",
+                        // =================================================
                     ],
         },
     ]

@@ -48,7 +48,7 @@ void *_sbrk(int i) {
   return (void *)prevheapp;
 }
 // ============================================================================================
-int _write(int f, const void *b, size_t n) { return ITM_write(f, b, n); }
+int _write(int f, const void *b, size_t n) { return ITM_Write(f, b, n); }
 // ============================================================================================
-int _isatty(int f) { return 0; }
+int _isatty(int f) { return 1; }
 // ============================================================================================
