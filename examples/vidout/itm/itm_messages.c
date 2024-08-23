@@ -15,13 +15,13 @@
 #define DBG_TCR_ITMENA (1 << 0)
 // ====================================================================================================
 static inline uint32_t _sendITM(uint32_t ch, uint32_t d, uint8_t size) {
+   __asm__ volatile ("cpsid i" : : : "memory");
   if ((DBG_DEMCR & DBG_DEMCR_TRCENA) && /* Trace enabled */
       (DBG_TCR & DBG_TCR_ITMENA) &&     /* ITM enabled */
       (ITM_ChannelEnabled(ch))          /* ITM Port c enabled */
   ) {
-    while (DBG_PORT[ch] == 0) {
-    }; /* Port available? */
-
+        while (!DBG_PORT[0]) { __asm__("nop;");
+        }; /* Port available? */
     switch (size) {
     case 1:
       (*((volatile uint8_t *)&(DBG_PORT[ch]))) = (uint8_t)d;
@@ -37,6 +37,7 @@ static inline uint32_t _sendITM(uint32_t ch, uint32_t d, uint8_t size) {
       break;
     }
   }
+   __asm__ volatile ("cpsie i" : : : "memory");
   return (size);
 }
 // ====================================================================================================
