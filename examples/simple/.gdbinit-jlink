@@ -5,6 +5,7 @@ monitor reset
 
 file ofiles/simple.elf
 set mem inaccessible-by-default off
+load
 
 source /usr/local/share/orbcode/gdbtrace.init
 enableSTM32SWO 4
