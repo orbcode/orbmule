@@ -66,6 +66,7 @@ int main( void )
                     _sieve();
                     ITM_Send8(0,a);
                 }
+	    ITM_SendString(0, "\r\n" __DATE__ "\r\n" __TIME__ "\r\n");
         }
 
     /* should not reach this statement */
