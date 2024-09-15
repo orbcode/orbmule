@@ -66,6 +66,14 @@ int main( void )
                     _sieve();
                     ITM_Send8(0,a);
                 }
+	ITM_Send8(0,'\r');
+	ITM_Send8(0,'\n');
+	ITM_SendString(0, __DATE__);
+	ITM_Send8(0,'\r');
+	ITM_Send8(0,'\n');
+	ITM_SendString(0, __TIME__);
+	ITM_Send8(0,'\r');
+	ITM_Send8(0,'\n');
         }
 
     /* should not reach this statement */
